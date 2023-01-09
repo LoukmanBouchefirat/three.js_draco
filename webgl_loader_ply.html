@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>three.js webgl - PLY</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<link type="text/css" rel="stylesheet" href="main.css">
+	</head>
+	<body>
+		<div id="info">
+			<a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> -
+			PLY loader test by <a href="https://github.com/menway" target="_blank" rel="noopener">Wei Meng</a>.<br/>
+			Image from <a href="http://people.sc.fsu.edu/~jburkardt/data/ply/ply.html">John Burkardt</a>
+		</div>
+
+		<script src="https://cdn.rawgit.com/mrdoob/three.js/dev/build/three.min.js"></script>
+  		<script src="DRACOLoader.js"></script>
+
+		<!-- Import maps polyfill -->
+		<!-- Remove this when import maps will be widely supported -->
+		<script async src="https://unpkg.com/es-module-shims@1.3.6/dist/es-module-shims.js"></script>
+		
+
+
+		<script type="importmap">
+			{
+				"imports": {
+					"three": "../build/three.module.js",
+					"three/addons/": "./jsm/"
+				}
+			}
+		</script>
+
+		<script type="module">
+
+			
+			import * as THREE from 'three';
+			
+			import Stats from 'three/addons/libs/stats.module.js';
+			
+			import { PLYLoader } from 'three/addons/loaders/PLYLoader.js';
+
+			import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+			
+			let container, stats;
+			
+			var camera, cameraTarget, scene, renderer;
+			var dotMaterial = new THREE.PointsMaterial( { size: 0.06,vertexColors: true,sizeAttenuation: false } );
+			var loadedframe = -1
+			var cframe = 0
+			var frames = []
+			var loaded = false
+			var t1s =[]
+
+			// Configure decoder and create loader.
+			var dracoLoader = new DRACOLoader();
+
+			// Specify path to a folder containing WASM/JS decoding libraries.
+			// It is recommended to always pull your Draco JavaScript and WASM decoders
+			// from the below URL. Users will benefit from having the Draco decoder in
+			// cache as more sites start using the static URL.
+			dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.5/');
+			// Optional: Pre-fetch Draco WASM/JS module.
+			dracoLoader.preload();
+
+
+			init();
+			animate();
+
+			function init() {
+				console.log('ini')
+
+				container = document.createElement( 'div' );
+				document.body.appendChild( container );
+
+				camera = new THREE.PerspectiveCamera( 35, window.innerWidth / window.innerHeight, 1, 15 );
+				camera.position.set( 3, 0.15, 3 );
+
+				cameraTarget = new THREE.Vector3( 0, - 0.1, 0 );
+
+				scene = new THREE.Scene();
+				scene.background = new THREE.Color( 0x72645b );
+				scene.fog = new THREE.Fog( 0x72645b, 2, 15 );
+
+
+				// Ground
+
+				const plane = new THREE.Mesh(
+					new THREE.PlaneGeometry( 40, 40 ),
+					new THREE.MeshPhongMaterial( { color: 0x999999, specular: 0x101010 } )
+				);
+				plane.rotation.x = - Math.PI / 2;
+				plane.position.y = - 0.5;
+				scene.add( plane );
+
+				plane.receiveShadow = true;
+				let t1 = Date.now()
+				fetch('http://localhost:8081/package-lock.json')
+  				.then(() => {console.log("available bandwith");
+				  let t = Date.now() - t1
+				  console.log(0.54/(t*0.001)+'Mo/s')
+
+			
+			
+			
+			})
+				t1 = Date.now()
+
+
+				// PLY file
+
+				const loader = new PLYLoader();
+				loader.load( './models/ply/ascii/dolphins.ply', function ( geometry ) {
+	
+					geometry.computeVertexNormals();
+	
+					const material = new THREE.MeshStandardMaterial( { color: 0x0055ff, flatShading: true } );
+					const mesh = new THREE.Mesh( geometry, material );
+	
+					mesh.position.y = - 0.2;
+					mesh.position.z = 0.3;
+					mesh.rotation.x = - Math.PI / 2;
+					mesh.scale.multiplyScalar( 0.001 );
+	
+					mesh.castShadow = true;
+					mesh.receiveShadow = true;
+	
+					scene.add( mesh );
+	
+				} );
+
+
+
+
+
+
+				/*for (let i = 1000;i<1010;i++){
+					console.log('i')
+					console.log(i)
+					loader.loadAsync( 'models/ply/ply/loot_vox10_'+i+'.ply')
+					.then( geometry =>{
+					geometry.scale(0.0006,0.0006,0.0006)
+				 	frames[i-1000]= new THREE.Points( geometry, dotMaterial );
+					 loadedframe ++ ;
+				
+					console.log('fff')
+				}) ;
+				
+				
+			}*/
+			loaded = true
+			
+			
+			
+			// Lights
+			
+			scene.add( new THREE.HemisphereLight( 0x443333, 0x111122 ) );
+			
+			addShadowedLight( 1, 1, 1, 0xffffff, 1.35 );
+			addShadowedLight( 0.5, 1, - 1, 0xffaa00, 1 );
+
+
+
+			dracoLoader.load( 'models/ply/ply/out10.drc', function ( geometry ) {
+
+			geometry.computeVertexNormals();
+			geometry.scale(0.0006,0.0006,0.0006);
+
+			//THREE.VertexColors
+			var material = new THREE.MeshStandardMaterial( { vertexColors: true } );
+			var mesh = new THREE.Mesh( geometry, material );
+			mesh.castShadow = true;
+			mesh.receiveShadow = true;
+			scene.add( mesh );
+
+			} );
+			
+			// renderer
+			
+			renderer = new THREE.WebGLRenderer( { antialias: true } );
+			renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				renderer.outputEncoding = THREE.sRGBEncoding;
+
+				renderer.shadowMap.enabled = true;
+
+				container.appendChild( renderer.domElement );
+
+				//window.addEventListener( 'resize', onWindowResize, false );
+
+				// stats
+
+				stats = new Stats();
+				container.appendChild( stats.dom );
+				
+
+				// resize
+
+				window.addEventListener( 'resize', onWindowResize );
+				
+				console.log("loaded")
+			}
+
+			function addShadowedLight( x, y, z, color, intensity ) {
+
+				const directionalLight = new THREE.DirectionalLight( color, intensity );
+				directionalLight.position.set( x, y, z );
+				scene.add( directionalLight );
+
+				directionalLight.castShadow = true;
+
+				const d = 1;
+				directionalLight.shadow.camera.left = - d;
+				directionalLight.shadow.camera.right = d;
+				directionalLight.shadow.camera.top = d;
+				directionalLight.shadow.camera.bottom = - d;
+
+				directionalLight.shadow.camera.near = 1;
+				directionalLight.shadow.camera.far = 4;
+
+				directionalLight.shadow.mapSize.width = 1024;
+				directionalLight.shadow.mapSize.height = 1024;
+
+				directionalLight.shadow.bias = - 0.001;
+
+			}
+
+			function onWindowResize() {
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+			}
+
+			function animate() {
+
+				//animateobj()
+				
+				render();
+				
+				stats.update();
+
+				requestAnimationFrame( animate );
+
+
+			}
+
+			function render() {
+				
+				const timer = Date.now() * 0.0005;
+				
+				camera.position.x = Math.sin( timer ) * 2.5;
+				camera.position.z = Math.cos( timer ) * 2.5;
+				
+				camera.lookAt( cameraTarget );
+				
+				renderer.render( scene, camera );
+
+			}
+			function animateobj(){
+				console.log('cframe')
+				console.log(cframe)
+				console.log('loadedframe')
+				console.log(loadedframe)
+				if((cframe < 10)&&cframe<=loadedframe){
+					if (cframe == 0){
+						frames[9]?scene.remove(frames[9]):{};
+						frames[0]?scene.add(frames[0]):{};
+						cframe ++ ;
+						cframe = cframe%10
+					}else {
+						frames[cframe-1]?scene.remove(frames[cframe-1]):{};					
+						frames[cframe]?scene.add(frames[cframe])	:{};				
+						cframe ++;
+						cframe = cframe%10
+					}
+
+			}}
+			//setInterval(() => {animate()
+				
+			//}, 1000/30);
+			
+
+			async function loadVolumetric(){
+				const loader = new PLYLoader();
+
+				for (let i = 1000;i<1010;i++){
+					console.log('i')
+					console.log(i)
+					let now= Date.now()
+					t1s [i-1000] = now
+					loader.loadAsync( 'models/ply/Ply/loot_vox10_'+i+'.ply')
+					.then( geometry =>{
+					geometry.scale(0.0006,0.0006,0.0006)
+				 	frames[i-1000]= new THREE.Points( geometry, dotMaterial );
+					 loadedframe ++ ;
+				
+					console.log('time to load frame'+Number(i-1000)+':'+Number((Date.now()-t1s[i-1000])/1000)+'s' )
+				}) ;
+				
+				
+			}
+			}
+			//await loadVolumetric()
+
+		</script>
+	</body>
+</html>
