@@ -305,7 +305,7 @@
 			async function loadVolumetric(){
 				//const loader = new PLYLoader();
 
-				for (let i = 0;i<10;i++){
+				for (let i = 0;i<30;i++){
 					console.log('i')
 					console.log(i)
 					let now= Date.now()
@@ -313,11 +313,11 @@
 					dracoLoader.loadAsync( 'models/ply/ply/lootout'+i+'.drc')
 					.then( geometry =>{
 					geometry.scale(0.0006,0.0006,0.0006)
-				 	frames[i-0]= new THREE.Points( geometry, dotMaterial );
+				 	frames[i]= new THREE.Points( geometry, dotMaterial );
 					 //scene.add( pointCloud );
 					 loadedframe ++ ;
 				
-					console.log('time to load frame'+Number(i-1000)+':'+Number((Date.now()-t1s[i-1000])/1000)+'s' )
+					console.log('time to load frame'+Number(i)+':'+Number((Date.now()-t1s[i])/1000)+'s' )
 				}) ;
 				
 				
